@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Riset Operasi Baru</title>
+        <script src="public/chart.js"></script>
+        <script src="public/tailwind.js"></script>
+    </head>
+
+    <body>
+        <div class="flex flex-col justify-center items-center gap-8 py-24">
+            <div class="w-full max-w-[90%] flex flex-col items-center gap-4">
+                <h1 class="text-center text-2xl font-bold">Pengujian Class PSO</h1>
+                <div class="overflow-hidden rounded-lg py-2 px-3 bg-zinc-300">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="border border-gray-600 p-2">Partikel</th>
+                                <th class="border border-gray-600 p-2">Posisi</th>
+                                <th class="border border-gray-600 p-2">Fitness</th>
+                                <th class="border border-gray-600 p-2">Kecepatan</th>
+                                <th class="border border-gray-600 p-2">PBest</th>
+                                <th class="border border-gray-600 p-2">PBest Fitness</th>
+                            </tr>
+                        </thead>
+                        <tbody id="particleTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="grid grid-cols-2 gap-2 w-full max-w-5xl">
+                    <div class="flex flex-col justify-center items-center rounded bg-zinc-300 p-2">
+                        <p class="font-semibold">GBest Fitness</p>
+                        <p id="gbestFitness">?</p>
+                    </div>
+                    <div class="flex flex-col justify-center items-center rounded bg-zinc-300 p-2">
+                        <p class="font-semibold">GBest Position</p>
+                        <p id="gbestPosition">?</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="startButton"
+                        class="bg-blue-500 hover:bg-blue-600 transition text-white rounded-full px-5 py-2 rounded font-medium">Start
+                        Iteration</button>
+                </div>
+            </div>
+            <div class="w-full max-w-[40%]">
+                <canvas id="fitnessChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <script type="module">
+            import { Rosenbrock } from "./rosenbrock.js";
+            import { PSO } from "./pso.js";
+
+            const tableBody = document.getElementById('particleTableBody');
+            const gbestFitnessElement = document.getElementById('gbestFitness');
+            const gbestPositionElement = document.getElementById('gbestPosition');
+            const startButton = document.getElementById('startButton');
+
+            const n_particle = 6;
+            const pso = new PSO(n_particle, 2, Rosenbrock);
+
+            let iteration = 0;
+            let gbestFitnessData = [];
+            let labels = [];
+
+            const fitnessChart = new Chart(document.getElementById('fitnessChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Gbest Fitness',
+                        data: gbestFitnessData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Iteration'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Gbest Fitness'
+                            }
+                        }
+                    }
+                }
+            });
+
+            const updateTable = () => {
+                tableBody.innerHTML = '';
+
+                pso.particles.forEach((particle, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                <td class="border border-gray-600 p-2 text-center">${index + 1}</td>
+                <td class="border border-gray-600 p-2 text-center">${particle.position.join(', ')}</td>
+                <td class="border border-gray-600 p-2 text-center">${particle.fitness}</td>
+                <td class="border border-gray-600 p-2 text-center">${particle.velocity.join(', ')}</td>
+                <td class="border border-gray-600 p-2 text-center">${particle.pbest.join(', ')}</td>
+                <td class="border border-gray-600 p-2 text-center">${particle.pbestFitness}</td>
+                `;
+                    tableBody.appendChild(row);
+                });
+
+                gbestFitnessElement.textContent = pso.gbestFitness;
+                gbestPositionElement.textContent = pso.gbestPosition.join(', ');
+            }
+
+            const updateChart = () => {
+                labels.push(iteration);
+                gbestFitnessData.push(pso.gbestFitness);
+                fitnessChart.update();
+            }
+
+            const runPSOIteration = () => {
+                const maxIteration = 20;
+                const interval = setInterval(() => {
+                    if (iteration >= maxIteration) {
+                        clearInterval(interval);
+                        console.log('Iterasi PSO selesai!');
+                        alert('Iterasi PSO selesai!');
+                        return;
+                    }
+                    pso.mainPSO();
+                    updateTable();
+                    updateChart();
+                    iteration++;
+                }, 1000);
+            }
+
+            startButton.addEventListener('click', () => {
+                iteration = 0;
+                runPSOIteration();
+            });
+        </script>
+    </body>
+
+</html>

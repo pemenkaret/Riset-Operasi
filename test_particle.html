@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riset Operasi</title>
+    <script src="./public/tailwind.js"></script>
+    <script src="public/chart.js"></script>
+    <script src="public/jquery.js"></script>
+</head>
+
+<body>
+    <div class="flex flex-col justify-center items-center gap-8 py-24">
+        <div class="w-full max-w-[90%] flex flex-col gap-4">
+            <h1 class="text-center text-2xl font-bold">Pengujian Class Particle</h1>
+            <div class="overflow-hidden rounded-lg py-2 px-3 bg-zinc-300">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="border border-gray-600 p-2">Partikel</th>
+                            <th class="border border-gray-600 p-2">Posisi</th>
+                            <th class="border border-gray-600 p-2">Fitness</th>
+                            <th class="border border-gray-600 p-2">Kecepatan</th>
+                            <th class="border border-gray-600 p-2">PBest</th>
+                            <th class="border border-gray-600 p-2">PBest Fitness</th>
+                        </tr>
+                    </thead>
+                    <tbody id="particleTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="w-full max-w-[60%]">
+            <canvas id="scatterChart" width="50px" height="20px"></canvas>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { Rosenbrock } from "./rosenbrock.js";
+        import { Particle } from "./particle.js";
+
+        function testParticle() {
+            const nParticle = 5;
+            const nDimension = 2;
+            const particles = [];
+            const oldScatterData = [];
+            const scatterData = [];
+
+            for (let i = 0; i < nParticle; i++) {
+                const particle = new Particle(nDimension, Rosenbrock);
+                particle.inisialisasiPosisi(-10, 10);
+                particles.push(particle);
+            }
+
+            const tableBody = document.getElementById('particleTableBody');
+
+            particles.forEach((particle, index) => {
+                particle.calculateFitness();
+                particle.updatePbest();
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="border border-gray-600 p-2 text-center">${index + 1}</td>
+                    <td class="border border-gray-600 p-2 text-center">${particle.position.join(', ')}</td>
+                    <td class="border border-gray-600 p-2 text-center">${particle.fitness}</td>
+                    <td class="border border-gray-600 p-2 text-center">${particle.velocity.join(', ')}</td>
+                    <td class="border border-gray-600 p-2 text-center">${particle.pbest.join(', ')}</td>
+                    <td class="border border-gray-600 p-2 text-center">${particle.pbestFitness}</td>
+                `;
+                tableBody.appendChild(row);
+
+                oldScatterData.push({
+                    x: particle.position[0],
+                    y: particle.position[1]
+                });
+
+                particle.updatePosition();
+
+                scatterData.push({
+                    x: particle.position[0],
+                    y: particle.position[1]
+                });
+            });
+
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Old Posisi',
+                            data: oldScatterData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)', 
+                        },
+                        {
+                            label: 'New Posisi',
+                            data: scatterData, 
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)', 
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Posisi X'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Posisi Y'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        testParticle();
+    </script>
+</body>
+
+</html>
